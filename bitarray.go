@@ -1,29 +1,26 @@
 package bitarray
 
-import ()
-
+/* too slow
 type Iter struct {
-	slotRefer []byte
-	cursor    int64
-	index     int8
-	cache     byte //生成时就初始化为第一个byte
+	slotRefer  []byte
+	index      int8
+	slotcursor int64
 }
 
 func (this *Iter) Next() (isSet bool) {
+	if (this.slotRefer[this.slotcursor] & bitmask[this.index]) > 0 {
+		isSet = true
+	} else {
+		isSet = false
+	}
+	this.index += 1
 	if this.index == 8 {
-		this.cache = this.slotRefer[this.cursor>>3]
+		this.slotcursor += 1
 		this.index = 0
 	}
-	if (this.cache & bitmask[this.index]) == 0 {
-		isSet = false
-	} else {
-		isSet = true
-	}
-	this.index++
-	this.cursor++
 	return
 
-}
+}*/
 
 /////////////////////////////////////////////////////
 type BitArray struct {
@@ -40,18 +37,19 @@ func NetBitArray(size int64) *BitArray {
 	return bitarray
 }
 
+var MODULO = int64(0x0000000000000007)
 var bitmask = []byte{0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80}
 var bitumask = []byte{0xfe, 0xfd, 0xfb, 0xf7, 0xef, 0xdf, 0xbf, 0x7f}
 
 func (this *BitArray) Set(index int64) {
-	this.slot[index>>3] |= bitmask[index&0x00000007]
+	this.slot[index>>3] |= bitmask[index&MODULO]
 }
 func (this *BitArray) UnSet(index int64) {
-	this.slot[index>>3] &= bitumask[index&0x00000007]
+	this.slot[index>>3] &= bitumask[index&MODULO]
 }
 
 func (this *BitArray) IsSet(index int64) bool {
-	if (this.slot[index>>3] & bitmask[index&0x00000007]) > 0 {
+	if (this.slot[index>>3] & bitmask[index&MODULO]) > 0 {
 		return true
 	}
 	return false
@@ -71,7 +69,7 @@ func (this *BitArray) SetAll() {
 	for ; i < length; i++ {
 		this.slot[i] = 0xff
 	}
-	this.slot[i] = tailmask[this.Size&0x00000007]
+	this.slot[i] = tailmask[this.Size&MODULO]
 }
 
 func (this *BitArray) HaveSet() bool {
@@ -95,16 +93,16 @@ func (this *BitArray) String() string {
 	return string(bytes)
 }
 
-func (this *BitArray) GetIter() *Iter {
-	return &Iter{
-		slotRefer: this.slot,
-		cache:     this.slot[0],
+/* too slow
+func (this *BitArray) GetIter(skip int64) *Iter {
+	if skip == 0 {
+		return &Iter{
+			slotRefer: this.slot,
+		}
+	} else {
+		return &Iter{
+			slotRefer: this.slot,
+			index:     int8(skip & MODULO),
+		}
 	}
-}
-
-/*type Iter struct {
-	slotRefer []byte
-	cursor    int64
-	index     int8
-	cache     byte //生成时就初始化为第一个byte
 }*/
